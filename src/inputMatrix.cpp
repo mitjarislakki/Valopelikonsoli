@@ -1,4 +1,10 @@
 #include <Arduino.h>
+/*
+Input Matrix
+
+kytke diodit niin että virta menee row → col:
+row → napit → IN4148 diodit → col + 10k pulldown
+*/
 
 const int row[] = {11, 12, 13};
 const int col[] = {2,3,4};
