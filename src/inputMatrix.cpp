@@ -2,7 +2,8 @@
 
 const int row[] = {11, 12, 13};
 const int col[] = {2,3,4};
-int keys[9];
+const int size = 3;
+int keys[size*size];
 
 // put function declarations here:
 void updateKeys();
@@ -10,7 +11,7 @@ void updateKeys();
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
-  for(int i=0; i < 3; i++){
+  for(int i=0; i < size; i++){
     pinMode(row[i], OUTPUT);
     pinMode(col[i], INPUT);
   }
@@ -19,10 +20,10 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
   updateKeys();
-  for(int i=0; i < 3; i++){
-    Serial.print(keys[3*i]);
-    Serial.print(keys[3*i+1]);
-    Serial.print(keys[3*i+2]);
+  for(int i=0; i < size; i++){
+    for(int j = 0; j < size; j++){
+        Serial.print(keys[size*i+j]);
+    }
     Serial.print(" ");
   }
   Serial.println();
@@ -32,19 +33,19 @@ void loop() {
 
 // put function definitions here:
 void updateKeys(){
-    for(int i=0; i < 3; i++){
-        digitalWrite(row[0], LOW);
-        digitalWrite(row[1], LOW);
-        digitalWrite(row[2], LOW);
+    for(int i=0; i < size; i++){
+        for(int k=0; k < size; k++){
+        digitalWrite(row[k], LOW);
+        }
 
         digitalWrite(row[i], HIGH);
-        for(int j = 0; j < 3; j++){
+        for(int j = 0; j < size; j++){
             int state = digitalRead(col[j]);
             if(state == HIGH){
-                keys[i*3+j] = HIGH;
+                keys[i*size+j] = HIGH;
             }
             else{
-                keys[i*3+j] = LOW;
+                keys[i*size+j] = LOW;
             }
         }
         digitalWrite(row[i], LOW);
