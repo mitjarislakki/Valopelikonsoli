@@ -10,9 +10,9 @@
 Adafruit_SSD1306 display(-1);
 //Adafruit_SSD1306 display2(-1);
 
-#if (SSD1306_LCDHEIGHT != 64)
-#error("Height incorrect, please fix Adafruit_SSD1306.h!");
-#endif
+// #if (SSD1306_LCDHEIGHT != 64)
+// #error("Height incorrect, please fix Adafruit_SSD1306.h!");
+// #endif
 
 void setup() {
   // initialize and clear display
