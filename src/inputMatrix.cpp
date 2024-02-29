@@ -6,9 +6,9 @@ kytke diodit niin että virta menee row → col:
 row → napit → IN4148 diodit → col + 10k pulldown
 */
 
-const int row[] = {11, 12, 13};
-const int col[] = {2,3,4};
-const int size = 3;
+const int row[] = {8,9,10,11};
+const int col[] = {2,3,4,5};
+const int size = 4;
 int keys[size*size];
 
 // put function declarations here:
