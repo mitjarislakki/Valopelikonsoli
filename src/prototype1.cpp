@@ -49,6 +49,7 @@ int scoreP2 = 0;
 
 // put function declarations here:
 void updateKeys();
+void updateScreens();
 
 void setup() {
   // put your setup code here, to run once:
@@ -73,6 +74,11 @@ void setup() {
 	// Print a message to the LCD
 	lcd1.print("Valopeli, P1");
 	lcd2.print("Valopeli, P2");
+    delay(1000);
+    lcd1.clear();
+    lcd2.clear();
+    lcd1.print("P1: 0");
+	lcd2.print("P2: 0");
 }
 
 void loop() {
@@ -105,19 +111,14 @@ void loop() {
     leds[LedP1[currentP1-1]] = CRGB::Black;
     currentP1 = -1;
     scoreP1++;
+    updateScreens();
   }
   if(keys[KeysP2[currentP2]] == HIGH){
     leds[LedP2[currentP2-1]] = CRGB::Black;
     currentP2 = -1;
     scoreP2++;
+    updateScreens();
   }
-  
-  lcd1.clear();
-  lcd1.setCursor(0,0);
-  lcd2.clear();
-  lcd2.setCursor(0,0);
-  lcd1.print("P1: " + String(scoreP1));
-  lcd2.print("P2: " + String(scoreP2));
   delay(10);
 
 }
@@ -143,4 +144,13 @@ void updateKeys(){
     }
 
   
+}
+
+void updateScreens(){
+  lcd1.clear();
+  lcd1.setCursor(0,0);
+  lcd2.clear();
+  lcd2.setCursor(0,0);
+  lcd1.print("P1: " + String(scoreP1));
+  lcd2.print("P2: " + String(scoreP2));
 }
