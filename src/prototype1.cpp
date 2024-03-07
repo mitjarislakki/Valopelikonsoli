@@ -5,13 +5,13 @@
 #include <hd44780.h>                       // main hd44780 header
 #include <hd44780ioClass/hd44780_I2Cexp.h> // i2c expander i/o class header
 
-//Näytöjen asetukset:
-hd44780_I2Cexp lcd1(0x20);
-hd44780_I2Cexp lcd2(0x27);
+//Näyttöjen asetukset:
+hd44780_I2Cexp lcd1;
+hd44780_I2Cexp lcd2;
 const int LCD_COLS = 16;
 const int LCD_ROWS = 2;
 
-//Ledien asetukset
+//Ledien asetukset:
 #define LED_PIN 7
 #define LED_TYPE NEOPIXEL
 #define COLOR_ORDER GRB
@@ -63,7 +63,7 @@ void setup() {
   //LCD initialization
     int status1;
     int status2;
-    /*
+    
     status1 = lcd1.begin(LCD_COLS, LCD_ROWS);
 	status2 = lcd2.begin(LCD_COLS, LCD_ROWS);
 	if(status1) hd44780::fatalError(status1);
@@ -71,9 +71,8 @@ void setup() {
 
 	// initalization was successful, the backlight should be on now
 	// Print a message to the LCD
-	lcd1.print("Hello,");
-	lcd2.print("World");
-    */
+	lcd1.print("Valopeli, P1");
+	lcd2.print("Valopeli, P2");
 }
 
 void loop() {
@@ -105,23 +104,20 @@ void loop() {
   if(keys[KeysP1[currentP1]] == HIGH){
     leds[LedP1[currentP1-1]] = CRGB::Black;
     currentP1 = -1;
+    scoreP1++;
   }
   if(keys[KeysP2[currentP2]] == HIGH){
     leds[LedP2[currentP2-1]] = CRGB::Black;
     currentP2 = -1;
+    scoreP2++;
   }
-  /*
-  for(int i=0; i < size*size; i++){
-    if(keys[i]==HIGH){
-      leds[i] = CRGB(255,255,255);
-    }
-    else{
-      leds[i] = CRGB::Black;
-    }
-  }
-  */
   
-
+  lcd1.clear();
+  lcd1.setCursor(0,0);
+  lcd2.clear();
+  lcd2.setCursor(0,0);
+  lcd1.print("P1: " + String(scoreP1));
+  lcd2.print("P2: " + String(scoreP2));
   delay(10);
 
 }
