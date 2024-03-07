@@ -43,8 +43,8 @@ const int LCD_ROWS = 2;
 
 void setup()
 {
-int status1;
-int status2;
+	int status1;
+	int status2;
 
 	// initialize LCD with number of columns and rows: 
 	// hd44780 returns a status from begin() that can be used
