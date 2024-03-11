@@ -62,6 +62,12 @@ void setup() {
   //led strip initialization
   FastLED.addLeds<LED_TYPE, LED_PIN>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
 
+  //clear leds
+  for(int i = 0; i < NUM_LEDS; i++){
+    leds[i] = CRGB::Black;
+  }
+  FastLED.show();
+
   //LCD initialization
   int status1;
   int status2;
@@ -75,11 +81,18 @@ void setup() {
 	// Print a message to the LCD
 	lcd1.print("Valopeli, P1");
 	lcd2.print("Valopeli, P2");
-    delay(1000);
-    lcd1.clear();
-    lcd2.clear();
-    lcd1.print("P1: 0");
-	lcd2.print("P2: 0");
+  delay(2000);
+  lcd1.clear(); lcd1.print("3");
+  lcd2.clear(); lcd2.print("3");
+  delay(700);
+  lcd1.clear(); lcd1.print("2");
+  lcd2.clear(); lcd2.print("2");
+  delay(700);
+  lcd1.clear(); lcd1.print("1");
+  lcd2.clear(); lcd2.print("1");
+  delay(700);
+  lcd1.clear(); lcd1.print("P1: 0");
+  lcd2.clear(); lcd2.print("P2: 0");
 }
 
 void loop() {
@@ -116,7 +129,10 @@ void loop() {
     //check if player 1 is also pressing an incorrect key, in that case, don't give points
     int pass1 = 1;
     for(int i = 1; i<7; i++){
-      if(i!=currentP1 && keys[KeysP1[i]] == HIGH) pass1 = 0;
+      if(i!=currentP1 && keys[KeysP1[i]] == HIGH){
+        pass1 = 0;
+        break;
+      }
     }
     if(pass1 == 1){
       leds[LedP1[currentP1-1]] = CRGB::Black;
@@ -129,7 +145,10 @@ void loop() {
   if(keys[KeysP2[currentP2]] == HIGH){
     int pass2 = 1;
     for(int i = 1; i<7; i++){
-      if(i!=currentP2 && keys[KeysP2[i]] == HIGH) pass2 = 0;
+      if(i!=currentP2 && keys[KeysP2[i]] == HIGH){
+        pass2 = 0;
+        break;
+      }
     }
     if(pass2 == 1){
       leds[LedP2[currentP2-1]] = CRGB::Black;
