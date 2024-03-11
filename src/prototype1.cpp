@@ -91,8 +91,7 @@ void setup() {
   lcd1.clear(); lcd1.print("1");
   lcd2.clear(); lcd2.print("1");
   delay(700);
-  lcd1.clear(); lcd1.print("P1: 0");
-  lcd2.clear(); lcd2.print("P2: 0");
+  updateScreens();
 }
 
 void loop() {
@@ -188,9 +187,9 @@ void updateKeys(){
 //updates the screens to show the points of player 1 and 2
 void updateScreens(){
   lcd1.clear();
-  lcd1.setCursor(0,0);
+  //lcd1.setCursor(0,0);
   lcd2.clear();
-  lcd2.setCursor(0,0);
-  lcd1.print("P1: " + String(scoreP1));
-  lcd2.print("P2: " + String(scoreP2));
+  //lcd2.setCursor(0,0);
+  lcd1.print("Player 1: " + String(scoreP1));
+  lcd2.print("Player 2: " + String(scoreP2));
 }
