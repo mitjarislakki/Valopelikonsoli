@@ -52,8 +52,9 @@ void updateKeys();
 void updateScreens();
 
 void setup() {
-  // put your setup code here, to run once:
-  Serial.begin(9600);
+  randomSeed(analogRead(0)); //randomise seed to avoid every time being the same after reset
+  Serial.begin(9600); //enable serial for debugging
+  //pin setup for button matrix:
   for(int i=0; i < size; i++){
     pinMode(row[i], OUTPUT);
     pinMode(col[i], INPUT);
@@ -62,10 +63,10 @@ void setup() {
   FastLED.addLeds<LED_TYPE, LED_PIN>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
 
   //LCD initialization
-    int status1;
-    int status2;
+  int status1;
+  int status2;
     
-    status1 = lcd1.begin(LCD_COLS, LCD_ROWS);
+  status1 = lcd1.begin(LCD_COLS, LCD_ROWS);
 	status2 = lcd2.begin(LCD_COLS, LCD_ROWS);
 	if(status1) hd44780::fatalError(status1);
 	if(status2) hd44780::fatalError(status2);
@@ -83,9 +84,10 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
+  //check if player 1 should get a new led
   if(currentP1 == -1){
     while(1){
-      int i = random(1,7);
+      int i = random(1,7); //randomise until new led is different to previous led
       if(i != lastP1){
         currentP1 = i;
         lastP1 = i;
@@ -93,6 +95,7 @@ void loop() {
       }
     }
   }
+  //do the same for player 2
   if(currentP2 == -1){
     while(1){
       int i = random(1,7);
@@ -103,27 +106,44 @@ void loop() {
       }
     }
   }
-  updateKeys();
-  leds[LedP1[currentP1-1]] = CRGB(255,255,255);
+  updateKeys(); //read the state of the button matrix
+  leds[LedP1[currentP1-1]] = CRGB(255,255,255); //turn on the current leds for player 1 and 2
   leds[LedP2[currentP2-1]] = CRGB(255,255,255);
   FastLED.show();
+
+  //check if player 1 is pressing the correct button, give point and set to randomise new led
   if(keys[KeysP1[currentP1]] == HIGH){
-    leds[LedP1[currentP1-1]] = CRGB::Black;
-    currentP1 = -1;
-    scoreP1++;
-    updateScreens();
+    //check if player 1 is also pressing an incorrect key, in that case, don't give points
+    int pass1 = 1;
+    for(int i = 1; i<7; i++){
+      if(i!=currentP1 && keys[KeysP1[i]] == HIGH) pass1 = 0;
+    }
+    if(pass1 == 1){
+      leds[LedP1[currentP1-1]] = CRGB::Black;
+      currentP1 = -1;
+      scoreP1++;
+      updateScreens();
+    }
   }
+  //do the same for player 2
   if(keys[KeysP2[currentP2]] == HIGH){
-    leds[LedP2[currentP2-1]] = CRGB::Black;
-    currentP2 = -1;
-    scoreP2++;
-    updateScreens();
+    int pass2 = 1;
+    for(int i = 1; i<7; i++){
+      if(i!=currentP2 && keys[KeysP2[i]] == HIGH) pass2 = 0;
+    }
+    if(pass2 == 1){
+      leds[LedP2[currentP2-1]] = CRGB::Black;
+      currentP2 = -1;
+      scoreP2++;
+      updateScreens();
+    }
   }
   delay(10);
 
 }
 
 // put function definitions here:
+//reads the state of the matrix and puts it into keys[]
 void updateKeys(){
     for(int i=0; i < size; i++){
         for(int k=0; k < size; k++){
@@ -146,6 +166,7 @@ void updateKeys(){
   
 }
 
+//updates the screens to show the points of player 1 and 2
 void updateScreens(){
   lcd1.clear();
   lcd1.setCursor(0,0);
