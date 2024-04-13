@@ -131,9 +131,12 @@ void setup() {
 }
 
 void loop() {
-    unsigned int currentTime = millis();
+    // Get current running time
+    unsigned long currentTime = millis();
 
+    // Update pattern
     showPatterns(currentTime);
+    // update keypress map
     updateKeys();
 
     if(!p1Pattern && keys[KeysP1[pattern[p1Cur]]] == HIGH){
@@ -208,6 +211,7 @@ void showPatterns(unsigned long currentTime){
     bool p1Next = ((unsigned long)(currentTime - prevTimeP1P) >= PATTERN_INTERVAL);
     bool p2Next = ((unsigned long)(currentTime - prevTimeP2P) >= PATTERN_INTERVAL);
 
+    // Check p1
     if(p1Pattern && p1Next){
         Serial.print(pattern[indexP1P]);
         if(p1PStart){
