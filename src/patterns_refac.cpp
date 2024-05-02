@@ -8,11 +8,11 @@
 #include "patterns.h"
 
 // Print debug information to serial
-bool debug = true;
+constexpr bool debug = true;
 
 //Näyttöjen asetukset:
-hd44780_I2Cexp lcd1;
-hd44780_I2Cexp lcd2;
+hd44780_I2Cexp p1LCD;
+hd44780_I2Cexp p2LCD;
 const int LCD_COLS = 16;
 const int LCD_ROWS = 2;
 
@@ -46,8 +46,8 @@ const int p1LED[] = {0,1,2,3,4,5,6};
 const int p2LED[] = {7,8,9,10,11,12,13};
 
 // Player matrix pins
-const int p1Keys[] = {15,14,13,12,11,10,9};
-const int p2Keys[] = {7,6,5,4,3,2,1};
+const int p1Keys[] = {0,1,2,3,4,5,6};
+const int p2Keys[] = {7,8,9,11,12,13,14};
 
 // patterns
 #define PATTERN_LENGTH 100
@@ -103,24 +103,24 @@ void setup() {
     int status1;
     int status2;
         
-    status1 = lcd1.begin(LCD_COLS, LCD_ROWS);
-    status2 = lcd2.begin(LCD_COLS, LCD_ROWS);
+    status2 = p2LCD.begin(LCD_COLS, LCD_ROWS);
+    status1 = p1LCD.begin(LCD_COLS, LCD_ROWS);
     if(status1) hd44780::fatalError(status1);
     if(status2) hd44780::fatalError(status2);
 
     // initalization was successful, the backlight should be on now
     // Print a message to the LCD
-    lcd1.print("Valopeli, P1");
-    lcd2.print("Valopeli, P2");
+    p1LCD.print("Valopeli, P1");
+    p2LCD.print("Valopeli, P2");
     delay(2000);
-    lcd1.clear(); lcd1.print("3");
-    lcd2.clear(); lcd2.print("3");
+    p1LCD.clear(); p1LCD.print("3");
+    p2LCD.clear(); p2LCD.print("3");
     delay(700);
-    lcd1.clear(); lcd1.print("2");
-    lcd2.clear(); lcd2.print("2");
+    p1LCD.clear(); p1LCD.print("2");
+    p2LCD.clear(); p2LCD.print("2");
     delay(700);
-    lcd1.clear(); lcd1.print("1");
-    lcd2.clear(); lcd2.print("1");
+    p1LCD.clear(); p2LCD.print("1");
+    p2LCD.clear(); p2LCD.print("1");
     delay(700);
     updateScreens();
 }
@@ -167,10 +167,10 @@ void updateKeys(){
 
 //updates the screens to show the points of player 1 and 2
 void updateScreens(){
-  lcd1.clear();
-  lcd2.clear();
-  lcd1.print("Player 1: " + String(p1.score));
-  lcd2.print("Player 2: " + String(p2.score));
+  p1LCD.clear();
+  p2LCD.clear();
+  p1LCD.print("Player 1: " + String(p1.score));
+  p2LCD.print("Player 2: " + String(p2.score));
 }
 
 // Returns random free pin between min and max, that's not current
