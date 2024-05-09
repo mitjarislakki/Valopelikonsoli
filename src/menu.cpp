@@ -44,7 +44,7 @@ Player p2;
 
 //Game
 int mode = 0;
-String modes[] = {"Muistipeli", "Myyräpeli", "Paska"};
+String modes[] = {"Memory Game", "Whack-a-mole", "Speed Game"};
 int selection = -1;
 
 //paskapeli
@@ -52,9 +52,7 @@ int currentP1 = -1;
 int lastP1 = -1;
 int currentP2 = -1;
 int lastP2 = -1;
-
-int scoreP1 = 0;
-int scoreP2 = 0;
+unsigned long startTime = 0;
 
 // Player LED numbers
 const int p1LED[] = {0,1,2,3,4,5,6};
@@ -129,8 +127,8 @@ void setup() {
     p1LCD.print("Valopeli, P1");
     p2LCD.print("Valopeli, P2");
     delay(2000);
-    updateScreens("Valikko:");
-    delay(700);
+    updateScreens("Select Game:");
+    delay(1100);
     updateScreens("");
 }
 
@@ -154,11 +152,39 @@ void loop() {
     }
     else if(mode == 2){
         //myyräpeli
+        delay(3000);
+        updateScreens("ERROR >:(");
     }
 
     else{
         //paskapeli
-        paskapeli();
+        if(startTime == 0){startTime = millis();}
+        if(millis()<startTime + 30000){paskapeli();}
+        else if(p1.score > p2.score){
+            updateScreens("Player 1 won!");
+            for(int i=0; i<7;i++){
+                leds[p1LED[i]] = CRGB(255,0,0);
+                leds[p2LED[i]] = CRGB(0,255,0);
+            }
+            FastLED.show();
+            delay(60000);
+        }
+        else if(p2.score > p1.score){
+            updateScreens("Player 2 won!");
+            for(int i=0; i<7;i++){
+                leds[p2LED[i]] = CRGB(255,0,0);
+                leds[p1LED[i]] = CRGB(0,255,0);
+            }
+            FastLED.show();
+            delay(60000);}
+        else{
+            updateScreens("Tie!");
+            for(int i=0; i<7;i++){
+                leds[p1LED[i]] = CRGB(200,255,0);
+                leds[p2LED[i]] = CRGB(200,255,0);
+            }
+            FastLED.show();
+            delay(60000);}
     }
     delay(10);
 }
