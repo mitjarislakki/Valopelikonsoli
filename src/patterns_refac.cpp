@@ -43,11 +43,11 @@ Player p2;
 
 // Player LED numbers
 const int p1LED[] = {0,1,2,3,4,5,6};
-const int p2LED[] = {7,8,9,10,11,12,13};
+const int p2LED[] = {7,12,11,10,9,8,13};
 
 // Player matrix pins
 const int p1Keys[] = {0,1,2,3,4,5,6};
-const int p2Keys[] = {7,8,9,11,12,13,14};
+const int p2Keys[] = {7,13,12,10,9,8,14};
 
 // patterns
 #define PATTERN_LENGTH 100
@@ -81,7 +81,7 @@ void setup() {
     
     // Set up the pattern
     for (int i = 0; i < PATTERN_LENGTH; i++){
-        pattern[i] = random(0, 6);
+        pattern[i] = random(0, 7);
     }
 
     Serial.begin(9600); //enable serial for debugging
@@ -119,7 +119,7 @@ void setup() {
     p1LCD.clear(); p1LCD.print("2");
     p2LCD.clear(); p2LCD.print("2");
     delay(700);
-    p1LCD.clear(); p2LCD.print("1");
+    p1LCD.clear(); p1LCD.print("1");
     p2LCD.clear(); p2LCD.print("1");
     delay(700);
     updateScreens();
@@ -133,6 +133,15 @@ void loop() {
     showPatterns(currentTime);
     // update keypress map
     updateKeys();
+
+    // Print keys
+    for(int i=0; i < size; i++){
+    for(int j = 0; j < size; j++){
+        Serial.print(keys[size*i+j]);
+    }
+        Serial.print(" ");
+    }
+    Serial.println();
 
     processInputs(&p1, p1Keys);
     processInputs(&p2, p2Keys);
