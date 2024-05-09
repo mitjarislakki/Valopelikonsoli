@@ -47,6 +47,15 @@ int mode = 0;
 String modes[] = {"Muistipeli", "Myyräpeli", "Paska"};
 int selection = -1;
 
+//paskapeli
+int currentP1 = -1;
+int lastP1 = -1;
+int currentP2 = -1;
+int lastP2 = -1;
+
+int scoreP1 = 0;
+int scoreP2 = 0;
+
 // Player LED numbers
 const int p1LED[] = {0,1,2,3,4,5,6};
 const int p2LED[] = {7,12,11,10,9,8,13};
@@ -63,6 +72,7 @@ int pattern[PATTERN_LENGTH];
 // put function declarations here:
 
 void updateKeys();
+void paskapeli();
 void clearLeds();
 bool onKeyDown(int key);
 void updateScreens(String disp);
@@ -144,6 +154,11 @@ void loop() {
     }
     else if(mode == 2){
         //myyräpeli
+    }
+
+    else{
+        //paskapeli
+        paskapeli();
     }
     delay(10);
 }
@@ -300,6 +315,7 @@ void menu(){
             delay(700);
             updateScreens("1");
             delay(700);
+            updateScreens("");
         }
 }
 
@@ -308,4 +324,66 @@ void clearLeds(){
         leds[i] = CRGB::Black;
     }
     FastLED.show();
+}
+
+void paskapeli(){
+    if(currentP1 == -1){
+    while(1){
+      int i = random(1,7); //randomise until new led is different to previous led
+      if(i != lastP1){
+        currentP1 = i;
+        lastP1 = i;
+        break;
+      }
+    }
+  }
+  //do the same for player 2
+  if(currentP2 == -1){
+    while(1){
+      int i = random(1,7);
+      if(i != lastP2){
+        currentP2 = i;
+        lastP2 = i;
+        break;
+      }
+    }
+  }
+  updateKeys(); //read the state of the button matrix
+  leds[p1LED[currentP1]] = CRGB(255,255,255); //turn on the current leds for player 1 and 2
+  leds[p2LED[currentP2]] = CRGB(255,255,255);
+  FastLED.show();
+
+  //check if player 1 is pressing the correct button, give point and set to randomise new led
+  if(keys[p1Keys[currentP1]] == HIGH){
+    //check if player 1 is also pressing an incorrect key, in that case, don't give points
+    int pass1 = 1;
+    for(int i = 1; i<7; i++){
+      if(i!=currentP1 && keys[p1Keys[i]] == HIGH){
+        pass1 = 0;
+        break;
+      }
+    }
+    if(pass1 == 1){
+      leds[p1LED[currentP1]] = CRGB::Black;
+      currentP1 = -1;
+      p1.score++;
+      updateScreens("");
+    }
+  }
+  if(keys[p2Keys[currentP2]] == HIGH){
+    //check if player 2 is also pressing an incorrect key, in that case, don't give points
+    int pass2 = 1;
+    for(int i = 1; i<7; i++){
+      if(i!=currentP2 && keys[p2Keys[i]] == HIGH){
+        pass2 = 0;
+        break;
+      }
+    }
+    if(pass2 == 1){
+      leds[p2LED[currentP2]] = CRGB::Black;
+      currentP2 = -1;
+      p2.score++;
+      updateScreens("");
+    }
+  }
 }
