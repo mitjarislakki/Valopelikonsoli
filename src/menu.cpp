@@ -44,7 +44,7 @@ Player p2;
 
 //Game
 int mode = 0;
-String modes[] = {"Memory Game", "Whack-a-mole", "Speed Game"};
+String modes[] = {"Memory Game", "Whac-a-mole", "Speed Game"};
 int selection = -1;
 
 //paskapeli
@@ -70,6 +70,7 @@ int pattern[PATTERN_LENGTH];
 // put function declarations here:
 
 void updateKeys();
+void showScores();
 void paskapeli();
 void clearLeds();
 bool onKeyDown(int key);
@@ -162,6 +163,7 @@ void loop() {
         if(millis()<startTime + 30000){paskapeli();}
         else if(p1.score > p2.score){
             updateScreens("Player 1 won!");
+            showScores();
             for(int i=0; i<7;i++){
                 leds[p1LED[i]] = CRGB(255,0,0);
                 leds[p2LED[i]] = CRGB(0,255,0);
@@ -171,6 +173,7 @@ void loop() {
         }
         else if(p2.score > p1.score){
             updateScreens("Player 2 won!");
+            showScores();
             for(int i=0; i<7;i++){
                 leds[p2LED[i]] = CRGB(255,0,0);
                 leds[p1LED[i]] = CRGB(0,255,0);
@@ -179,9 +182,10 @@ void loop() {
             delay(60000);}
         else{
             updateScreens("Tie!");
+            showScores();
             for(int i=0; i<7;i++){
-                leds[p1LED[i]] = CRGB(200,255,0);
-                leds[p2LED[i]] = CRGB(200,255,0);
+                leds[p1LED[i]] = CRGB(175,255,0);
+                leds[p2LED[i]] = CRGB(175,255,0);
             }
             FastLED.show();
             delay(60000);}
@@ -242,6 +246,14 @@ int randomPin(int current, int min, int max){
     while(i == current) i = random(min, max);
     return i;
 }
+
+void showScores(){
+    p1LCD.setCursor(0,1);
+    p1LCD.print(String(p1.score) + " vs " + String(p2.score));
+    p2LCD.setCursor(0,1);
+    p2LCD.print(String(p1.score) + " vs " + String(p2.score));
+}
+
 
 
 void showPatterns(unsigned long currentTime){
