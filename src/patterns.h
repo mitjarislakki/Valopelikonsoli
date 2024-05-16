@@ -7,4 +7,5 @@ struct Player{
     unsigned long prevTime; // Time of previous pattern step
     int score; // Player's score
     int expected; // The button the player needs to press next
+    bool failed; // Indicates if the player is not able to play anymore 
 };

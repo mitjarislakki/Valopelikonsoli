@@ -33,7 +33,7 @@ row → napit → IN4148 diodit → col + 10k pulldown
 // Matrix row/col pins
 const int row[] = {8,9,10,11};
 const int col[] = {2,3,4,5};
-const int size = 4;
+constexpr int size = 4;
 int keys[size*size];
 
 
@@ -49,6 +49,12 @@ const int p2LED[] = {7,12,11,10,9,8,13};
 const int p1Keys[] = {0,1,2,3,4,5,6};
 const int p2Keys[] = {7,13,12,10,9,8,14};
 
+constexpr long debounceDelay = 200;
+unsigned long lastDebounce[size*size] = {0};
+int lastState[size*size] = {0};
+
+
+
 // patterns
 #define PATTERN_LENGTH 100
 #define PATTERN_INTERVAL 500
@@ -56,12 +62,14 @@ int pattern[PATTERN_LENGTH];
 
 // put function declarations here:
 
-void updateKeys();
+void updateKeys(unsigned long);
 void updateScreens();
+
 void showPatterns(unsigned long);
 void initializePlayer(Player*);
 void nextPattern(Player*, const int*);
 void processInputs(Player*, const int*);
+void failPlayer(Player*, const int*);
 
 
 void initializePlayer(Player* player){
@@ -71,6 +79,7 @@ void initializePlayer(Player* player){
     player->patternMax = 1,
     player->prevTime = 0,
     player->score = 0;
+    player->failed = false;
 }
 
 void setup() { 
@@ -132,7 +141,7 @@ void loop() {
     // Update pattern
     showPatterns(currentTime);
     // update keypress map
-    updateKeys();
+    updateKeys(currentTime);
 
     // Print keys
     for(int i=0; i < size; i++){
@@ -142,9 +151,9 @@ void loop() {
         Serial.print(" ");
     }
     Serial.println();
-
-    processInputs(&p1, p1Keys);
-    processInputs(&p2, p2Keys);
+    if(!p1.failed) processInputs(&p1, p1Keys);
+    if(!p2.failed) processInputs(&p2, p2Keys);
+    if(p1.failed && p2.failed);
     delay(10);
 }
 
@@ -152,7 +161,7 @@ void loop() {
 
 //reads the state of the matrix and puts it into array keys,
 // keys[i] represents whether or not i:th key is pressed
-void updateKeys(){
+void updateKeys(unsigned long currentTime){
     for(int i=0; i < size; i++){
         for(int k=0; k < size; k++){
         digitalWrite(row[k], LOW);
@@ -161,17 +170,15 @@ void updateKeys(){
         digitalWrite(row[i], HIGH);
         for(int j = 0; j < size; j++){
             int state = digitalRead(col[j]);
-            if(state == HIGH){
-                keys[i*size+j] = HIGH;
-            }
-            else{
-                keys[i*size+j] = LOW;
+            int btnIndex = i*size + j;
+            lastState[btnIndex] = keys[btnIndex];
+            if(state != lastState[btnIndex] && (currentTime - lastDebounce[btnIndex]) > debounceDelay){
+                lastDebounce[btnIndex] = currentTime;
+                keys[btnIndex] = state;
             }
         }
         digitalWrite(row[i], LOW);
     }
-
-  
 }
 
 //updates the screens to show the points of player 1 and 2
@@ -238,16 +245,38 @@ void nextPattern(Player* player, const int* pins){
 // Check that the player input is the pattern
 void processInputs(Player* player, const int* playerKeys){
     // Check that player in pattern phase and expected button is pressed
-    if(!player->inPattern && keys[playerKeys[pattern[player->expected]]] == HIGH){
-        player->expected++; // Increment expected button
-        if(player->expected == player->patternMax){
-            player->score++; // Increment player's score
-            player->expected = 0; // Expect the first in pattern
-            player->patternMax++; // Increment the pattern by one
-            // Avoid pattern overflow (max is PATTERN_LENGTH)
-            if(player->patternMax == PATTERN_LENGTH) player->patternMax = 1;
-            player->inPattern = true; // Show the next pattern
-            updateScreens(); // Update screens
+    if(!player->inPattern){
+        int correctKey = playerKeys[pattern[player->expected]];
+        // Check that no other key than the correct one is pressed
+        bool failed = false;
+        for(int i = 0; i < 7; i++){
+            int key = playerKeys[i]; 
+            if(keys[key] == HIGH && !lastState[key] && key != correctKey){
+                failed = true;
+                break;
+            }
         }
+        if(failed) failPlayer(player, playerKeys); // Fail the player if failure detected
+        else if(keys[correctKey] == HIGH){
+            player->expected++; // Increment expected button
+            if(player->expected == player->patternMax){
+                player->score++; // Increment player's score
+                player->expected = 0; // Expect the first in pattern
+                player->patternMax++; // Increment the pattern by one
+                // Avoid pattern overflow (max is PATTERN_LENGTH)
+                if(player->patternMax == PATTERN_LENGTH) player->patternMax = 1;
+                player->inPattern = true; // Show the next pattern
+                updateScreens(); // Update screens
+            }
+        }
+
     }
+}
+
+void failPlayer(Player* player, const int* playerKeys){
+    player->failed = true;
+    for(int i = 0; i < 7; i++){
+        leds[playerKeys[i]] = CRGB::Green;
+    }
+    FastLED.show();
 }
