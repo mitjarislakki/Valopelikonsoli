@@ -139,11 +139,13 @@ void loop() {
 
     // update keypress map
     updateKeys();
+
+    //mode 0 = menu, 1 = memory game etc.
     if(mode == 0){
         menu();
     }
     else if(mode == 1){
-        // muistipeli
+        // Memory game
         // Update pattern
         showPatterns(currentTime);
         updateKeys();
@@ -152,13 +154,13 @@ void loop() {
         processInputs(&p2, p2Keys);
     }
     else if(mode == 2){
-        //myyräpeli
+        //Whac-a-mole
         delay(3000);
         updateScreens("ERROR >:(");
     }
 
     else{
-        //paskapeli
+        //Speed game
         if(startTime == 0){startTime = millis();}
         if(millis()<startTime + 30000){paskapeli();}
         else if(p1.score > p2.score){
@@ -247,14 +249,13 @@ int randomPin(int current, int min, int max){
     return i;
 }
 
+//show player scores on bottom row of both LCDs
 void showScores(){
     p1LCD.setCursor(0,1);
     p1LCD.print(String(p1.score) + " vs " + String(p2.score));
     p2LCD.setCursor(0,1);
     p2LCD.print(String(p1.score) + " vs " + String(p2.score));
 }
-
-
 
 void showPatterns(unsigned long currentTime){
     // Check if in pattern phase and interval has passed
@@ -300,7 +301,6 @@ void nextPattern(Player* player, const int* pins){
     FastLED.show();
 }
 
-
 // Check that the player input is the pattern
 void processInputs(Player* player, const int* playerKeys){
     // Check that player in pattern phase and expected button is pressed
@@ -318,6 +318,7 @@ void processInputs(Player* player, const int* playerKeys){
     }
 }
 
+//check for new keypress
 bool onKeyDown(int key){
     if(keys[key] && !oldkeys[key]){
         return true;
@@ -325,6 +326,7 @@ bool onKeyDown(int key){
     else return false;
 }
 
+//handle the menu
 void menu(){
     if(selection == -1){
             selection = 0;
@@ -357,6 +359,7 @@ void menu(){
         }
 }
 
+//turn off all leds
 void clearLeds(){
     for(int i = 0; i < NUM_LEDS; i++){
         leds[i] = CRGB::Black;
@@ -364,6 +367,7 @@ void clearLeds(){
     FastLED.show();
 }
 
+//handle the logic for the speed game
 void paskapeli(){
     if(currentP1 == -1){
     while(1){
