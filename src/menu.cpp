@@ -42,17 +42,22 @@ int oldkeys[size*size];
 Player p1;
 Player p2;
 
-//Game
+//Menu
 int mode = 0;
 String modes[] = {"Memory Game", "Whac-a-mole", "Speed Game"};
 int selection = -1;
+
+unsigned long startTime = 0;
 
 //paskapeli
 int currentP1 = -1;
 int lastP1 = -1;
 int currentP2 = -1;
 int lastP2 = -1;
-unsigned long startTime = 0;
+
+//moles
+int currentMoles[] = {0,0,0,0,0,0,0};
+unsigned long nextMole = 0;
 
 // Player LED numbers
 const int p1LED[] = {0,1,2,3,4,5,6};
@@ -80,6 +85,8 @@ void showPatterns(unsigned long);
 void initializePlayer(Player*);
 void nextPattern(Player*, const int*);
 void processInputs(Player*, const int*);
+void timedGame(int game, int timer, unsigned long currentTime);
+void moles(unsigned long currentTime);
 
 
 void initializePlayer(Player* player){
@@ -155,42 +162,12 @@ void loop() {
     }
     else if(mode == 2){
         //Whac-a-mole
-        delay(3000);
-        updateScreens("ERROR >:(");
+        timedGame(2, 30*1000, currentTime);
     }
 
     else{
         //Speed game
-        if(startTime == 0){startTime = millis();}
-        if(millis()<startTime + 30000){paskapeli();}
-        else if(p1.score > p2.score){
-            updateScreens("Player 1 won!");
-            showScores();
-            for(int i=0; i<7;i++){
-                leds[p1LED[i]] = CRGB(255,0,0);
-                leds[p2LED[i]] = CRGB(0,255,0);
-            }
-            FastLED.show();
-            delay(60000);
-        }
-        else if(p2.score > p1.score){
-            updateScreens("Player 2 won!");
-            showScores();
-            for(int i=0; i<7;i++){
-                leds[p2LED[i]] = CRGB(255,0,0);
-                leds[p1LED[i]] = CRGB(0,255,0);
-            }
-            FastLED.show();
-            delay(60000);}
-        else{
-            updateScreens("Tie!");
-            showScores();
-            for(int i=0; i<7;i++){
-                leds[p1LED[i]] = CRGB(175,255,0);
-                leds[p2LED[i]] = CRGB(175,255,0);
-            }
-            FastLED.show();
-            delay(60000);}
+        timedGame(3, 30*1000, currentTime);
     }
     delay(10);
 }
@@ -416,4 +393,105 @@ void paskapeli(){
       updateScreens("");
     }
   }
+}
+
+//higher level handler for the timed games, runs game for set time, then shows results
+void timedGame(int game, int timer, unsigned long currentTime){
+    //game = game number
+    //timer = time before end in millis
+    if(startTime == 0){startTime = millis();}
+    if(currentTime < startTime + timer){ //game still running
+        if(game == 2) moles(currentTime);
+        else if(game == 3) paskapeli();
+        }
+    else if(p1.score > p2.score){ //game ended, p1 won
+        updateScreens("Player 1 won!");
+        showScores();
+        for(int i=0; i<7;i++){
+            leds[p1LED[i]] = CRGB(255,0,0);
+            leds[p2LED[i]] = CRGB(0,255,0);
+        }
+        FastLED.show();
+        delay(60000);
+    }
+    else if(p2.score > p1.score){
+        updateScreens("Player 2 won!");
+        showScores();
+        for(int i=0; i<7;i++){
+            leds[p2LED[i]] = CRGB(255,0,0);
+            leds[p1LED[i]] = CRGB(0,255,0);
+        }
+        FastLED.show();
+        delay(60000);}
+    else{
+        updateScreens("Tie!");
+        showScores();
+        for(int i=0; i<7;i++){
+            leds[p1LED[i]] = CRGB(175,255,0);
+            leds[p2LED[i]] = CRGB(175,255,0);
+        }
+        FastLED.show();
+        delay(60000);}
+}
+
+//handle the logic for the mole game
+void moles(unsigned long currentTime){
+    //mole array: 0 = empty, 1 = mole, 2 = snake
+    //randomize time for next mole
+    if(nextMole == 0){
+        nextMole = currentTime + random(500, 2000); //change mole timing here
+    }
+    //add mole
+    if(currentTime >= nextMole){
+        nextMole = 0;
+        //remove old snakes
+        for(int i=0; i <7; i++){
+            if (currentMoles[i] == 2) currentMoles[i] = 0;
+        }
+        int moleType = (int)random(1,8);
+        if(moleType > 6) moleType = 2;
+        else moleType = 1;
+        int newMole[] = {(int)random(0,7), moleType};
+        currentMoles[newMole[0]] = newMole[1];
+    }
+    //update LEDs
+    for(int i = 0; i < 7; i++){
+        //player 1
+        if (currentMoles[i] == 0){
+            leds[p1LED[i]] = CRGB::Black;
+            leds[p2LED[i]] = CRGB::Black;
+        }
+        else if (currentMoles[i] == 1){
+            leds[p1LED[i]] = CRGB(175,255,0); //mole color
+            leds[p2LED[i]] = CRGB(175,255,0); 
+        }
+        else {
+            leds[p1LED[i]] = CRGB(0,255,0); //snake color
+            leds[p2LED[i]] = CRGB(0,255,0);
+        }
+        FastLED.show();
+    }
+    //check if mole is pressed, give points
+    for(int i = 0; i < 7; i++){
+        //player 1
+        if(onKeyDown(p1Keys[i])){
+            if (currentMoles[i] == 1) p1.score++;
+            else if(currentMoles[i] == 2) p1.score--;
+            //player 1 and 2
+            if (onKeyDown(p2Keys[i])){
+                if (currentMoles[i] == 1) p2.score++;
+                else if(currentMoles[i] == 2) p2.score--;
+            }
+            currentMoles[i] = 0;
+            updateScreens("");
+        }
+        //player 2 only
+        else if(onKeyDown(p2Keys[i])){
+            if (currentMoles[i] == 1) p2.score++;
+            else if(currentMoles[i] == 2) p2.score--;
+            currentMoles[i] = 0;
+            updateScreens("");
+        }
+    }
+    
 }
