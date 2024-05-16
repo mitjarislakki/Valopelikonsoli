@@ -370,26 +370,14 @@ void clearLeds(){
 //handle the logic for the speed game
 void paskapeli(){
     if(currentP1 == -1){
-    while(1){
-      int i = random(1,7); //randomise until new led is different to previous led
-      if(i != lastP1){
-        currentP1 = i;
-        lastP1 = i;
-        break;
-      }
+        currentP1 = randomPin(lastP1,0,7);
+        lastP1 = currentP1;
     }
-  }
   //do the same for player 2
-  if(currentP2 == -1){
-    while(1){
-      int i = random(1,7);
-      if(i != lastP2){
-        currentP2 = i;
-        lastP2 = i;
-        break;
-      }
+    if(currentP2 == -1){
+        currentP2 = randomPin(lastP2,0,7);
+        lastP2 = currentP2;
     }
-  }
   updateKeys(); //read the state of the button matrix
   leds[p1LED[currentP1]] = CRGB(255,255,255); //turn on the current leds for player 1 and 2
   leds[p2LED[currentP2]] = CRGB(255,255,255);
