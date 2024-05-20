@@ -10,17 +10,23 @@
 // Print debug information to serial
 constexpr bool debug = true;
 
-//Näyttöjen asetukset:
+#define MOLE_TIMER 30 // Length of whack-a-mole game in seconds
+#define SPEED_TIMER 30 // Length of speed game in seconds
+
+//Screen settings:
 hd44780_I2Cexp p1LCD;
 hd44780_I2Cexp p2LCD;
 const int LCD_COLS = 16;
 const int LCD_ROWS = 2;
 
-//Ledien asetukset:
+#define MOLE_MIN (long)500
+#define MOLE_MAX (long)2000
+
+//LED settings:
 #define LED_PIN 7
 #define LED_TYPE NEOPIXEL
 #define COLOR_ORDER GRB
-#define NUM_LEDS 31
+#define NUM_LEDS 16
 CRGB leds[NUM_LEDS];
 
 /*
@@ -35,7 +41,9 @@ const int row[] = {8,9,10,11};
 const int col[] = {2,3,4,5};
 const int size = 4;
 int keys[size*size];
-int oldkeys[size*size];
+int lastKeys[size*size];
+constexpr long debounceDelay = 200;
+unsigned long lastDebounce[size*size] = {0};
 
 
 // Players
@@ -74,7 +82,7 @@ int pattern[PATTERN_LENGTH];
 
 // put function declarations here:
 
-void updateKeys();
+void updateKeys(unsigned long);
 void showScores();
 void paskapeli();
 void clearLeds();
@@ -87,6 +95,8 @@ void nextPattern(Player*, const int*);
 void processInputs(Player*, const int*);
 void timedGame(int game, int timer, unsigned long currentTime);
 void moles(unsigned long currentTime);
+void failPlayer(Player*, const int*);
+void endGame();
 
 
 void initializePlayer(Player* player){
@@ -137,7 +147,7 @@ void setup() {
     delay(2000);
     updateScreens("Select Game:");
     delay(1100);
-    updateScreens("");
+    updateScreens(""); // Set to default
 }
 
 void loop() {
@@ -145,7 +155,18 @@ void loop() {
     unsigned long currentTime = millis();
 
     // update keypress map
-    updateKeys();
+    updateKeys(currentTime);
+
+    // Print keys
+    if(debug){
+        for(int i=0; i < size; i++){
+            for(int j = 0; j < size; j++){
+                Serial.print(keys[size*i+j]);
+            }
+                Serial.print(" ");
+        }
+        Serial.println();
+    }
 
     //mode 0 = menu, 1 = memory game etc.
     if(mode == 0){
@@ -155,19 +176,19 @@ void loop() {
         // Memory game
         // Update pattern
         showPatterns(currentTime);
-        updateKeys();
 
-        processInputs(&p1, p1Keys);
-        processInputs(&p2, p2Keys);
+        if(!p1.failed) processInputs(&p1, p1Keys);
+        if(!p2.failed) processInputs(&p2, p2Keys);
+        if(p1.failed && p2.failed) endGame();
     }
     else if(mode == 2){
         //Whac-a-mole
-        timedGame(2, 30*1000, currentTime);
+        timedGame(2, MOLE_TIMER*1000, currentTime);
     }
 
     else{
         //Speed game
-        timedGame(3, 30*1000, currentTime);
+        timedGame(3, SPEED_TIMER*1000, currentTime);
     }
     delay(10);
 }
@@ -176,12 +197,7 @@ void loop() {
 
 //reads the state of the matrix and puts it into array keys,
 // keys[i] represents whether or not i:th key is pressed
-void updateKeys(){
-    //set oldkeys to keys
-    for(int i = 0; i<size*size; i++){
-        oldkeys[i] = keys[i];
-    }
-    //update keys
+void updateKeys(unsigned long currentTime){
     for(int i=0; i < size; i++){
         for(int k=0; k < size; k++){
         digitalWrite(row[k], LOW);
@@ -190,17 +206,15 @@ void updateKeys(){
         digitalWrite(row[i], HIGH);
         for(int j = 0; j < size; j++){
             int state = digitalRead(col[j]);
-            if(state == HIGH){
-                keys[i*size+j] = HIGH;
-            }
-            else{
-                keys[i*size+j] = LOW;
+            int btnIndex = i*size + j;
+            lastKeys[btnIndex] = keys[btnIndex];
+            if(state != lastKeys[btnIndex] && (currentTime - lastDebounce[btnIndex]) > debounceDelay){
+                lastDebounce[btnIndex] = currentTime;
+                keys[btnIndex] = state;
             }
         }
         digitalWrite(row[i], LOW);
     }
-
-  
 }
 
 //updates the screens to show the points of player 1 and 2
@@ -281,23 +295,37 @@ void nextPattern(Player* player, const int* pins){
 // Check that the player input is the pattern
 void processInputs(Player* player, const int* playerKeys){
     // Check that player in pattern phase and expected button is pressed
-    if(!player->inPattern && keys[playerKeys[pattern[player->expected]]] == HIGH){
-        player->expected++; // Increment expected button
-        if(player->expected == player->patternMax){
-            player->score++; // Increment player's score
-            player->expected = 0; // Expect the first in pattern
-            player->patternMax++; // Increment the pattern by one
-            // Avoid pattern overflow (max is PATTERN_LENGTH)
-            if(player->patternMax == PATTERN_LENGTH) player->patternMax = 1;
-            player->inPattern = true; // Show the next pattern
-            updateScreens(""); // Update screens
+    if(!player->inPattern){
+        int correctKey = playerKeys[pattern[player->expected]];
+        // Check that no other key than the correct one is pressed
+        bool failed = false;
+        for(int i = 0; i < 7; i++){
+            int key = playerKeys[i]; 
+            if(keys[key] == HIGH && !lastKeys[key] && key != correctKey){
+                failed = true;
+                break;
+            }
         }
+        if(failed) failPlayer(player, playerKeys); // Fail the player if failure detected
+        else if(keys[correctKey] == HIGH){
+            player->expected++; // Increment expected button
+            if(player->expected == player->patternMax){
+                player->score++; // Increment player's score
+                player->expected = 0; // Expect the first in pattern
+                player->patternMax++; // Increment the pattern by one
+                // Avoid pattern overflow (max is PATTERN_LENGTH)
+                if(player->patternMax == PATTERN_LENGTH) player->patternMax = 1;
+                player->inPattern = true; // Show the next pattern
+                updateScreens(""); // Update screens
+            }
+        }
+
     }
 }
 
 //check for new keypress
 bool onKeyDown(int key){
-    if(keys[key] && !oldkeys[key]){
+    if(keys[key] && !lastKeys[key]){
         return true;
     }
     else return false;
@@ -355,7 +383,6 @@ void paskapeli(){
         currentP2 = randomPin(lastP2,0,7);
         lastP2 = currentP2;
     }
-  updateKeys(); //read the state of the button matrix
   leds[p1LED[currentP1]] = CRGB(255,255,255); //turn on the current leds for player 1 and 2
   leds[p2LED[currentP2]] = CRGB(255,255,255);
   FastLED.show();
@@ -404,42 +431,17 @@ void timedGame(int game, int timer, unsigned long currentTime){
         if(game == 2) moles(currentTime);
         else if(game == 3) paskapeli();
         }
-    else if(p1.score > p2.score){ //game ended, p1 won
-        updateScreens("Player 1 won!");
-        showScores();
-        for(int i=0; i<7;i++){
-            leds[p1LED[i]] = CRGB(255,0,0);
-            leds[p2LED[i]] = CRGB(0,255,0);
-        }
-        FastLED.show();
-        delay(60000);
-    }
-    else if(p2.score > p1.score){
-        updateScreens("Player 2 won!");
-        showScores();
-        for(int i=0; i<7;i++){
-            leds[p2LED[i]] = CRGB(255,0,0);
-            leds[p1LED[i]] = CRGB(0,255,0);
-        }
-        FastLED.show();
-        delay(60000);}
-    else{
-        updateScreens("Tie!");
-        showScores();
-        for(int i=0; i<7;i++){
-            leds[p1LED[i]] = CRGB(175,255,0);
-            leds[p2LED[i]] = CRGB(175,255,0);
-        }
-        FastLED.show();
-        delay(60000);}
+    else endGame();
 }
+
+
 
 //handle the logic for the mole game
 void moles(unsigned long currentTime){
     //mole array: 0 = empty, 1 = mole, 2 = snake
     //randomize time for next mole
     if(nextMole == 0){
-        nextMole = currentTime + random(500, 2000); //change mole timing here
+        nextMole = currentTime + random(MOLE_MIN, MOLE_MAX); //change mole timing here
     }
     //add mole
     if(currentTime >= nextMole){
@@ -494,4 +496,43 @@ void moles(unsigned long currentTime){
         }
     }
     
+}
+
+void failPlayer(Player* player, const int* playerKeys){
+    player->failed = true;
+    for(int i = 0; i < 7; i++){
+        leds[playerKeys[i]] = CRGB::Green;
+    }
+    FastLED.show();
+}
+
+void endGame(){
+    if(p1.score > p2.score){ //game ended, p1 won
+        updateScreens("Player 1 won!");
+        showScores();
+        for(int i=0; i<7;i++){
+            leds[p1LED[i]] = CRGB(255,0,0);
+            leds[p2LED[i]] = CRGB(0,255,0);
+        }
+        FastLED.show();
+        delay(60000);
+    }
+    else if(p2.score > p1.score){
+        updateScreens("Player 2 won!");
+        showScores();
+        for(int i=0; i<7;i++){
+            leds[p2LED[i]] = CRGB(255,0,0);
+            leds[p1LED[i]] = CRGB(0,255,0);
+        }
+        FastLED.show();
+        delay(60000);}
+    else{
+        updateScreens("Tie!");
+        showScores();
+        for(int i=0; i<7;i++){
+            leds[p1LED[i]] = CRGB(175,255,0);
+            leds[p2LED[i]] = CRGB(175,255,0);
+        }
+        FastLED.show();
+        delay(60000);}
 }
